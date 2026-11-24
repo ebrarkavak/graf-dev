@@ -1,0 +1,109 @@
+#include <stdio.h>
+
+#define N 6
+
+void graf_analizi(int kenarlar[][2], int kenar_sayisi, int baslangic_dugum) {
+    int matris[N][N] = {0};
+
+  
+    for (int i = 0; i < kenar_sayisi; i++) {
+        int u = kenarlar[i][0] - 1;
+        int v = kenarlar[i][1] - 1;
+        matris[u][v] = 1;
+        matris[v][u] = 1;
+    }
+
+    printf("--- Komsuluk Matrisi ---\n");
+    for (int i = 0; i < N; i++) {
+        printf("Dugum %d: [", i + 1);
+        for (int j = 0; j < N; j++) {
+            printf("%d%s", matris[i][j], (j < N - 1) ? ", " : "");
+        }
+        printf("]\n");
+    }
+
+
+    printf("\n--- Derece Bilgileri ---\n");
+    int toplam_derece = 0;
+    for (int i = 0; i < N; i++) {
+        int derece = 0;
+        for (int j = 0; j < N; j++) {
+            derece += matris[i][j];
+        }
+        toplam_derece += derece;
+        printf("Dugum %d Derecesi: %d\n", i + 1, derece);
+    }
+    printf("Grafin Genel (Toplam) Derecesi: %d\n", toplam_derece);
+
+   
+    int renk[N];
+    int mesafe[N];
+    int kuyruk[N];
+    int bas = 0, son = 0;
+
+    for (int i = 0; i < N; i++) {
+        renk[i] = -1;     
+        mesafe[i] = -1;
+    }
+
+    int start = baslangic_dugum - 1;
+    renk[start] = 0;
+    mesafe[start] = 0;
+    kuyruk[son++] = start;
+
+    int bipartite_mi = 1;
+    int cakisan_u = -1, cakisan_v = -1;
+
+    while (bas < son) {
+        int u = kuyruk[bas++];
+        for (int v = 0; v < N; v++) {
+            if (matris[u][v] == 1) {
+                if (renk[v] == -1) {
+                    renk[v] = 1 - renk[u];
+                    mesafe[v] = mesafe[u] + 1;
+                    kuyruk[son++] = v;
+                } else if (renk[v] == renk[u]) {
+                    bipartite_mi = 0;
+                    cakisan_u = u + 1;
+                    cakisan_v = v + 1;
+                }
+            }
+        }
+    }
+
+    printf("\n--- Bipartite (Iki Parcali) Analizi ---\n");
+    for (int i = 0; i < N; i++) {
+        const char *renk_adi = (renk[i] == 0) ? "Mavi (0 / Cift)" : "Kirmizi (1 / Tek)";
+        printf("Dugum %d -> Uzaklik: %d, Renk: %s\n", i + 1, mesafe[i], renk_adi);
+    }
+
+    if (bipartite_mi) {
+        printf("\nSONUC: Graf BIPARTITE (Iki Parcali) bir graftir.\n");
+        printf("Kume U (Istemciler): ");
+        for (int i = 0; i < N; i++) if (renk[i] == 0) printf("%d ", i + 1);
+        printf("\nKume V (Sunucular): ");
+        for (int i = 0; i < N; i++) if (renk[i] == 1) printf("%d ", i + 1);
+        printf("\n");
+    } else {
+        printf("\nSONUC: Graf BIPARTITE DEGILDIR! Cakisan kenar: (%d, %d)\n", cakisan_u, cakisan_v);
+    }
+}
+
+int main() {
+    int E[7][2] = {
+        {1, 2}, {1, 4}, {2, 3}, {3, 4}, {3, 6}, {4, 5}, {5, 6}
+    };
+
+    printf("================ ILK DURUM ================\n");
+    graf_analizi(E, 7, 1);
+
+   
+    int E_yeni[8][2] = {
+        {1, 2}, {1, 4}, {2, 3}, {3, 4}, {3, 6}, {4, 5}, {5, 6}, {2, 4}
+    };
+
+    printf("\n================ DINAMIK TEST: (2, 4) EKLENDI ================\n");
+    graf_analizi(E_yeni, 8, 1);
+
+    return 0;
+}
