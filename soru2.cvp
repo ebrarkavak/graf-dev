@@ -1,0 +1,143 @@
+#include <stdio.h>
+
+#define V 6
+#define INF 1000000000
+
+const char isimler[V] = {'A', 'B', 'C', 'D', 'E', 'F'};
+
+int harf_to_index(char c) {
+    return c - 'A';
+}
+
+void dijkstra(int graf[V][V], int baslangic, int dist[V], int path[V], int tablo_yazdir) {
+    int known[V];
+    for (int i = 0; i < V; i++) {
+        known[i] = 0;
+        dist[i] = INF;
+        path[i] = -1;
+    }
+    dist[baslangic] = 0;
+
+    for (int adim = 1; adim <= V; adim++) {
+        int min_dugum = -1;
+        int min_mesafe = INF;
+
+        for (int i = 0; i < V; i++) {
+            if (!known[i] && dist[i] < min_mesafe) {
+                min_mesafe = dist[i];
+                min_dugum = i;
+            }
+        }
+
+        if (min_dugum == -1) break;
+        known[min_dugum] = 1;
+
+        for (int v = 0; v < V; v++) {
+            if (graf[min_dugum][v] > 0 && !known[v]) {
+                int yeni_maliyet = dist[min_dugum] + graf[min_dugum][v];
+                if (yeni_maliyet < dist[v]) {
+                    dist[v] = yeni_maliyet;
+                    path[v] = min_dugum;
+                }
+            }
+        }
+
+        if (tablo_yazdir) {
+            printf("\nAdim %d (Secilen: %c):\n", adim, isimler[min_dugum]);
+            printf("%-8s %-8s %-10s %-8s\n", "Dugum", "Known", "Distance", "Path");
+            for (int i = 0; i < V; i++) {
+                char p_char = (path[i] != -1) ? isimler[path[i]] : '-';
+                if (dist[i] == INF) {
+                    printf("%-8c %-8s %-10s %-8c\n", isimler[i], known[i] ? "True" : "False", "INF", p_char);
+                } else {
+                    printf("%-8c %-8s %-10d %-8c\n", isimler[i], known[i] ? "True" : "False", dist[i], p_char);
+                }
+            }
+        }
+    }
+}
+
+void rota_yazdir(int path[V], int hedef) {
+    int rota[V];
+    int sayac = 0;
+    int mevcut = hedef;
+
+    while (mevcut != -1) {
+        rota[sayac++] = mevcut;
+        mevcut = path[mevcut];
+    }
+
+    for (int i = sayac - 1; i >= 0; i--) {
+        printf("%c%s", isimler[rota[i]], (i > 0) ? " -> " : "");
+    }
+}
+
+int main() {
+    int graf[V][V] = {0};
+
+  
+    struct { char u, v; int w; } kenarlar[10] = {
+        {'A', 'B', 7}, {'A', 'C', 5}, {'A', 'F', 1},
+        {'B', 'C', 1}, {'B', 'D', 1}, {'B', 'E', 3},
+        {'C', 'D', 2}, {'C', 'E', 1}, {'D', 'F', 7},
+        {'E', 'F', 2}
+    };
+
+    for (int i = 0; i < 10; i++) {
+        int u = harf_to_index(kenarlar[i].u);
+        int v = harf_to_index(kenarlar[i].v);
+        graf[u][v] = kenarlar[i].w;
+        graf[v][u] = kenarlar[i].w;
+    }
+
+    char kok_harf;
+    printf("Kok dugum giriniz (A-F): ");
+    scanf(" %c", &kok_harf);
+    int kok_idx = harf_to_index(kok_harf);
+
+    int dist[V], path[V];
+    printf("\n=== 1. KOK DUGUM '%c' ICIN DIJKSTRA ADIMLARI ===\n", isimler[kok_idx]);
+    dijkstra(graf, kok_idx, dist, path, 1);
+
+    
+    int dist_A[V], path_A[V];
+    dijkstra(graf, harf_to_index('A'), dist_A, path_A, 0);
+
+    printf("\n=== 2. ROTA CIKTILARI (KOK: A) ===\n");
+    int b_idx = harf_to_index('B');
+    int d_idx = harf_to_index('D');
+
+    printf("A -> B En Kisa Yol: ");
+    rota_yazdir(path_A, b_idx);
+    printf(" | Toplam Maliyet: %d\n", dist_A[b_idx]);
+
+    printf("A -> D En Kisa Yol: ");
+    rota_yazdir(path_A, d_idx);
+    printf(" | Toplam Maliyet: %d\n", dist_A[d_idx]);
+
+   
+    printf("\n=== 3. MERKEZI DUGUM ANALIZI ===\n");
+    int en_iyi_merkez = -1;
+    int en_dusuk_toplam = INF;
+
+    for (int k = 0; k < V; k++) {
+        int d_k[V], p_k[V];
+        dijkstra(graf, k, d_k, p_k, 0);
+
+        int toplam = 0;
+        for (int j = 0; j < V; j++) {
+            toplam += d_k[j];
+        }
+        printf("Kok Dugum %c -> En Kisa Yol Agaci Toplam Maliyeti: %d\n", isimler[k], toplam);
+
+        if (toplam < en_dusuk_toplam) {
+            en_dusuk_toplam = toplam;
+            en_iyi_merkez = k;
+        }
+    }
+
+    printf("\nSONUC: En merkezi dugum '%c' deposudur (Toplam Maliyet: %d).\n",
+           isimler[en_iyi_merkez], en_dusuk_toplam);
+
+    return 0;
+}
